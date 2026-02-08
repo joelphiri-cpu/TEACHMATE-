@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TEACHMATE2.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- PWA manifest & icons (add your own icons later) -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#833AB4" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(45deg, #833AB4, #FD1D1D, #FCAF45);
+      --bg: #FAFAFA;
+      --card: #FFFFFF;
+      --border: #DBDBDB;
+      --text: #262626;
+      --text-secondary: #8E8E8E;
+      --success: #2ECC71;
+      --warning: #F1C40F;
+      --error: #ED4956;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 70px; /* space for bottom nav */
+    }
+    header {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 14px 16px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #status { font-size: 13px; opacity: 0.9; }
+    section { padding: 16px; }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      margin: 12px 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      padding: 12px 16px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+    .student-card {
+      text-align: center;
+      padding: 12px;
+    }
+    .profile-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+      margin-bottom: 8px;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .name { font-weight: 600; font-size: 15px; }
+    .class { color: var(--text-secondary); font-size: 13px; }
+    
+    input, button, select {
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 15px;
+      width: calc(100% - 28px);
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: #eee; color: #262626; }
+    
+    .toggle {
+      appearance: none;
+      width: 48px;
+      height: 28px;
+      background: #ccc;
+      border-radius: 28px;
+      position: relative;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .toggle:checked { background: var(--success); }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      width: 24px; height: 24px;
+      background: white;
+      border-radius: 50%;
+      top: 2px; left: 2px;
+      transition: 0.3s;
+    }
+    .toggle:checked::after { transform: translateX(20px); }
+    
+    .fee-progress {
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .fee-bar {
+      height: 100%;
+      transition: width 0.4s;
+    }
+    
+    /* Bottom navigation */
+    nav.bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+    }
+    nav.bottom button {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      padding: 6px;
+      flex: 1;
+      text-align: center;
+    }
+    nav.bottom button.active {
+      color: #FD1D1D;
+      font-weight: 600;
+    }
+
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .modal h3 { margin-top: 0; }
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      z-index: 999;
+      display: none;
+    }
+    .loading { display: block; }
+
+    /* Center auth section */
+    #auth {
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    #auth input, #auth button {
+      width: 100%;
+    }
+    
+
+
+/* ===== GLOBAL BUTTON STYLE BASE ===== */
+button {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+/* ================= ADD BUTTONS (BLACK) ================= */
+/* Matches Add/Create/New text automatically */
+button[class*="add"],
+button[onclick*="add"],
+button:where(:not(#logoutBtn)):is(:contains("Add"), :contains("Create"), :contains("New")) {
+  background: #111 !important;
+  color: #fff !important;
+}
+
+/* ================= SAVE BUTTONS (GREEN) ================= */
+button[class*="save"],
+button[onclick*="save"] {
+  background: #16a34a !important;
+  color: #fff !important;
+}
+
+/* ================= EDIT BUTTONS (BLUE) ================= */
+button[class*="edit"],
+button[onclick*="edit"] {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+/* ================= DELETE BUTTONS (RED) ================= */
+button[class*="delete"],
+button[onclick*="delete"] {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+/* Logout button untouched */
+#logoutBtn {
+  background: inherit !important;
+  color: inherit !important;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+    
+  </style>
+</head>
+
+<body>
+
+<header>
+  <strong>TEACHMATE 2.0</strong>
+  <span id="status">Offline</span>
+  <button id="logoutBtn" style="display:none; background:none; color:white; border:none; cursor:pointer; font-size:14px;" onclick="logout()">Logout</button>
+</header>
+
+
+
+
+<section id="auth" style="display:block">
+  <h3>Login / Register</h3>
+  <input id="email" placeholder="Email" type="email" /><br>
+  <input id="password" type="password" placeholder="Password" /><br>
+  <button onclick="login()">Login</button>
+  <button onclick="register()" class="secondary">Register</button>
+  <button onclick="resetPass()" class="secondary">Forgot Password</button>
+</section>
+
+<section id="app" style="display:none">
+  <div id="content"></div>
+  
+  <!-- Bottom navigation -->
+  <nav class="bottom">
+    <button onclick="setView('classes')" class="active">Classes</button>
+    <button onclick="setView('students')">Students</button>
+    <button onclick="setView('attendance')">Attendance</button>
+    <button onclick="setView('fees')">Fees</button>
+    <button onclick="setView('results')">Results</button>
+  </nav>
+</section>
+
+<!-- Profile Setup Modal -->
+<div id="profileModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <h3>Setup Your Profile</h3>
+    <p>This is required to get started.</p>
+    <input id="teacherName" placeholder="Full Name" />
+    <input id="schoolName" placeholder="School Name" />
+    <input id="tsNumber" placeholder="TS Number" />
+    <button onclick="saveProfile()">Save Profile</button>
+  </div>
+</div>
+
+<!-- Warning Modal -->
+<div id="warningModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <h3 id="warningTitle"></h3>
+    <p id="warningMessage"></p>
+    <button onclick="closeWarning()">OK</button>
+  </div>
+</div>
+
+
+
+
+
+
+<!-- Toast for feedback -->
+<div id="toast" class="toast"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ──────────────── CONFIG ────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyD4RRaXRykTlyV39pK02wJYK93wKCwyfMw",
+  authDomain: "grok-4.firebaseapp.com",
+  projectId: "grok-4",
+  storageBucket: "grok-4.firebasestorage.app",
+  messagingSenderId: "790296418601",
+  appId: "1:790296418601:web:211890b270dbcf96a47f38"
+});
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ──────────────── IndexedDB Setup ────────────────
+let idb;
+const dbRequest = indexedDB.open("teachmateDB", 3);
+let dbReady = new Promise((resolve, reject) => {
+  dbRequest.onsuccess = e => { 
+    idb = e.target.result; 
+    resolve(); 
+  };
+  dbRequest.onerror = e => {
+    console.error("IndexedDB error:", e);
+    reject(e);
+  };
+});
+
+dbRequest.onupgradeneeded = e => {
+  idb = e.target.result;
+  const stores = ["profile", "classes", "students", "attendance", "fees", "results"];
+  stores.forEach(s => {
+    if (!idb.objectStoreNames.contains(s)) {
+      idb.createObjectStore(s, { keyPath: "id" });
+    }
+  });
+};
+
+// Helper: transaction wrapper
+async function idbTx(store, mode = "readwrite", callback) {
+  await dbReady;
+  return new Promise((resolve, reject) => {
+    const tx = idb.transaction(store, mode);
+    tx.oncomplete = () => resolve();
+    tx.onerror = reject;
+    callback(tx.objectStore(store));
+  });
+}
+
+async function saveLocal(store, data) {
+  await idbTx(store, "readwrite", os => os.put(data));
+  return data;
+}
+
+async function getLocal(store, id) {
+  return new Promise(resolve => {
+    idbTx(store, "readonly", os => {
+      const req = os.get(id);
+      req.onsuccess = () => resolve(req.result);
+    });
+  });
+}
+
+async function getAllLocal(store) {
+  return new Promise(resolve => {
+    idbTx(store, "readonly", os => {
+      const req = os.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+    });
+  });
+}
+
+async function countLocal(store) {
+  return new Promise(resolve => {
+    idbTx(store, "readonly", os => {
+      const req = os.count();
+      req.onsuccess = () => resolve(req.result);
+    });
+  });
+}
+
+async function deleteLocal(store, id) {
+  await idbTx(store, "readwrite", os => os.delete(id));
+}
+
+// Move declarations here
+let teacherId;
+let schoolId;
+
+// ──────────────── Network Status ────────────────
+function updateNet() {
+  const status = navigator.onLine ? "Online" : "Offline";
+  document.getElementById("status").innerText = status;
+  if (navigator.onLine) syncUp();
+}
+window.addEventListener("online", updateNet);
+window.addEventListener("offline", updateNet);
+updateNet();
+
+// Additional periodic check for more accurate detection (every 30 seconds)
+setInterval(async () => {
+  try {
+    // Attempt a simple HEAD request to a reliable endpoint (e.g., Google)
+    await fetch('https://www.google.com', { method: 'HEAD', mode: 'no-cors' });
+    if (document.getElementById("status").innerText !== "Online") {
+      updateNet(); // Trigger online if detected
+    }
+  } catch (err) {
+    if (document.getElementById("status").innerText !== "Offline") {
+      updateNet(); // Trigger offline if failed
+    }
+  }
+}, 30000); // Check every 30 seconds
+
+// ──────────────── Utils ────────────────
+function showToast(message, duration = 3000) {
+  const toast = document.getElementById("toast");
+  toast.innerText = message;
+  toast.style.display = "block";
+  setTimeout(() => toast.style.display = "none", duration);
+}
+
+function showLoading(message) {
+  showToast(message, 999999); // long duration
+}
+
+function hideLoading() {
+  document.getElementById("toast").style.display = "none";
+}
+
+function showWarning(title, message) {
+  document.getElementById("warningTitle").innerText = title;
+  document.getElementById("warningMessage").innerText = message;
+  document.getElementById("warningModal").style.display = "flex";
+}
+
+function closeWarning() {
+  document.getElementById("warningModal").style.display = "none";
+}
+
+function slugify(str) {
+  return str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+}
+
+// ──────────────── Auth ────────────────
+function login() {
+  showLoading("Signing you in...");
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(err => {
+      console.error("Login error:", err.message, err.code);
+      hideLoading();
+      alert(err.message);
+    });
+}
+
+function register() {
+  showLoading("Creating your account...");
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .catch(err => {
+      console.error("Register error:", err.message, err.code);
+      hideLoading();
+      alert(err.message);
+    });
+}
+
+function resetPass() {
+  showLoading("Sending password reset email...");
+  const email = document.getElementById("email").value;
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      hideLoading();
+      alert("Password reset email sent");
+    })
+    .catch(err => {
+      console.error("Reset password error:", err.message, err.code);
+      hideLoading();
+      alert(err.message);
+    });
+}
+
+function logout() {
+  showLoading("Logging you out...");
+  auth.signOut().then(() => {
+    hideLoading();
+    showToast("Logged out successfully");
+  }).catch(err => {
+    console.error("Logout error:", err.message, err.code);
+    hideLoading();
+    alert(err.message);
+  });
+}
+
+auth.onAuthStateChanged(async user => {
+  hideLoading();
+  if (!user) {
+    document.getElementById("auth").style.display = "block";
+    document.getElementById("app").style.display = "none";
+    document.getElementById("logoutBtn").style.display = "none";
+    return;
+  }
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("logoutBtn").style.display = "inline";
+  teacherId = user.uid;
+
+  showLoading("Checking your profile...");
+  try {
+    // ───── 1. Check local profile first (fast login) ─────
+    let profile = await getLocal("profile", teacherId);
+    if (profile) {
+      schoolId = profile.schoolId;
+      await downloadAll();
+      document.getElementById("app").style.display = "block";
+      renderCurrentView();
+      hideLoading();
+      return;
+    }
+
+    // ───── 2. Firestore lookup (phone lost scenario) ─────
+    const lookupDoc = await db.doc(`users/${teacherId}`).get();
+
+    if (lookupDoc.exists) {
+      const lookupData = lookupDoc.data();
+      schoolId = lookupData.schoolId;
+
+      // Get full teacher profile
+      const profileDoc = await db
+        .collection(`schools/${schoolId}/teachers`)
+        .doc(teacherId)
+        .collection("profile")
+        .doc("data")
+        .get();
+
+      if (profileDoc.exists) {
+        profile = {
+          ...profileDoc.data(),
+          id: teacherId,
+          schoolId,
+          syncStatus: "synced"
+        };
+
+        await saveLocal("profile", profile);
+        await downloadAll();
+
+        document.getElementById("app").style.display = "block";
+        renderCurrentView();
+        hideLoading();
+        return;
+      }
+    }
+
+    // ───── 3. First-time login → show floating profile setup ─────
+    hideLoading();
+    document.getElementById("app").style.display = "none";
+    document.getElementById("profileModal").style.display = "flex";
+
+  } catch (err) {
+    console.error("Auth state change error:", err.message, err.code);
+    hideLoading();
+    alert("Error loading your workspace.");
+  }
+});
+
+async function saveProfile() {
+  const name = document.getElementById("teacherName").value.trim();
+  const schoolName = document.getElementById("schoolName").value.trim();
+  const tsNumber = document.getElementById("tsNumber").value.trim();
+
+  if (!name || !schoolName || !tsNumber)
+    return alert("All fields required");
+
+  showLoading("Creating profile please wait...");
+
+  const uid = auth.currentUser.uid;
+  teacherId = uid;
+  schoolId = slugify(schoolName);
+
+  const batch = db.batch();
+
+  try {
+    // ───── Ensure SCHOOL document exists ─────
+    const schoolRef = db.doc(`schools/${schoolId}`);
+    batch.set(
+      schoolRef,
+      {
+        schoolName,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    // ───── Ensure TEACHER root document exists ─────
+    const teacherRef = db.doc(`schools/${schoolId}/teachers/${uid}`);
+    batch.set(
+      teacherRef,
+      {
+        teacherId: uid,
+        schoolId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    // ───── Global lookup document (important for recovery) ─────
+    const lookupRef = db.doc(`users/${uid}`);
+    batch.set(
+      lookupRef,
+      {
+        schoolId,
+        name,
+        tsNumber,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    // ───── Teacher profile document ─────
+    const profileRef = db.doc(
+      `schools/${schoolId}/teachers/${uid}/profile/data`
+    );
+
+    batch.set(profileRef, {
+      name,
+      schoolName,
+      tsNumber,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+
+    // ───── Save locally for offline support ─────
+    const profileLocal = {
+      id: uid,
+      name,
+      schoolName,
+      schoolId,
+      tsNumber,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncStatus: "synced"
+    };
+
+    await saveLocal("profile", profileLocal);
+
+    document.getElementById("profileModal").style.display = "none";
+
+    await downloadAll();
+    document.getElementById("app").style.display = "block";
+    renderCurrentView();
+
+    hideLoading();
+    showToast("Profile setup complete.");
+
+  } catch (err) {
+    console.error("Profile setup error:", err.message, err.code);
+    hideLoading();
+    alert("Error saving profile.");
+  }
+}
+  
+  
+// ──────────────── Sync Engine ────────────────
+async function downloadAll() {
+  if (!schoolId || !teacherId) return;
+  showLoading("Downloading your data...");
+  const collections = ["classes", "students", "attendance", "fees", "results"];
+  for (const coll of collections) {
+    const snap = await db.collection(`schools/${schoolId}/teachers/${teacherId}/${coll}`).get();
+    const cloudIds = snap.docs.map(d => d.id);
+    const locals = await getAllLocal(coll);
+    for (const loc of locals) {
+      if (!cloudIds.includes(loc.id)) {
+        await deleteLocal(coll, loc.id);
+      }
+    }
+    for (const doc of snap.docs) {
+      let data = { ...doc.data(), id: doc.id, syncStatus: "synced" };
+      if (coll === "students") {
+        const local = await getLocal(coll, data.id);
+        if (local && local.photo) {
+          data.photo = local.photo;
+        }
+      }
+      await saveLocal(coll, data);
+    }
+  }
+  hideLoading();
+  showToast("Data loaded successfully");
+}
+
+async function syncUp() {
+  if (!navigator.onLine || !teacherId || !schoolId) return;
+  showToast("Syncing your data...");
+
+  const stores = ["classes", "students", "attendance", "fees", "results"];
+  for (const store of stores) {
+    const items = await getAllLocal(store);
+    for (const item of items) {
+      if (item.syncStatus === "deleted") {
+        try {
+          await db.collection(`schools/${schoolId}/teachers/${teacherId}/${store}`).doc(item.id).delete();
+          await deleteLocal(store, item.id);
+        } catch (err) {
+          console.error("Delete failed:", store, item.id, err);
+        }
+      } else if (item.syncStatus === "pending") {
+        try {
+          const cloudData = { ...item, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+          delete cloudData.photo; // Keep local
+          delete cloudData.syncStatus;
+          await db.collection(`schools/${schoolId}/teachers/${teacherId}/${store}`).doc(item.id).set(cloudData, { merge: true });
+          item.syncStatus = "synced";
+          await saveLocal(store, item);
+        } catch (err) {
+          console.error("Sync failed:", store, item.id, err);
+        }
+      }
+    }
+  }
+  showToast("Sync completed successfully");
+}
+
+// ──────────────── View Management ────────────────
+let currentView = "classes";
+
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('nav.bottom button').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`nav.bottom button[onclick="setView('${v}')"]`).classList.add('active');
+  renderCurrentView();
+}
+
+async function renderCurrentView() {
+  const content = document.getElementById("content");
+  content.innerHTML = "";
+
+  if (currentView === "classes") await renderClasses();
+  if (currentView === "students") await renderStudents();
+  if (currentView === "attendance") await renderAttendance();
+  if (currentView === "fees") await renderFees();
+  if (currentView === "results") {
+    content.innerHTML = `<h3>Results</h3><p>PDF generation coming soon (Python FastAPI backend planned)</p>`;
+  }
+}
+
+// ──────────────── Classes ────────────────
+async function renderClasses() {
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <h3>Classes</h3>
+    <input id="className" placeholder="Class name (e.g. Grade 9A)" />
+    <button onclick="addClass()">Add Class</button>
+    <div id="classList"></div>
+  `;
+  await renderClassList();
+}
+
+async function addClass() {
+  const name = document.getElementById("className").value.trim();
+  if (!name) return alert("Enter class name");
+
+  const classCount = await countLocal("classes");
+  if (classCount >= 4) {
+    showWarning("Class Limit Reached", "TeachMate allows a maximum of four classes per teacher to maintain performance and organization. Please archive an existing class before adding another.");
+    return;
+  }
+
+  showLoading("Adding new class...");
+  const id = Date.now().toString();
+  const data = {
+    id,
+    name,
+    teacherId,
+    schoolId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    syncStatus: "pending",
+    archived: false
+  };
+  await saveLocal("classes", data);
+  syncUp();
+  await renderClassList();
+  hideLoading();
+}
+
+async function renderClassList() {
+  showLoading("Loading classes...");
+  const items = await getAllLocal("classes");
+  const html = items.map(c => `<div class="card"><div class="card-header">${c.name}</div></div>`).join("");
+  document.getElementById("classList").innerHTML = html || "<p>No classes yet</p>";
+  hideLoading();
+}
+
+// ──────────────── Students ────────────────
+async function renderStudents() {
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <h3>Students</h3>
+    <input id="stdName" placeholder="Full name" />
+    <input id="stdAdmission" placeholder="Admission number" />
+    <select id="stdGender">
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+      <option value="O">Other</option>
+    </select>
+    <input id="stdParentContact" placeholder="Parent contact" />
+    <select id="stdClass"></select>
+    <input id="stdPhoto" type="file" accept="image/*" />
+    <button onclick="addStudent()">Add Student</button>
+    <div class="student-grid" id="studentGrid"></div>
+  `;
+  await populateClassSelect("stdClass");
+  await renderStudentGrid();
+}
+
+async function populateClassSelect(selectId) {
+  const classes = await getAllLocal("classes");
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = `<option value="">Select class</option>` + 
+    classes.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+}
+
+async function addStudent() {
+  const name = document.getElementById("stdName").value.trim();
+  const admission = document.getElementById("stdAdmission").value.trim();
+  const gender = document.getElementById("stdGender").value;
+  const parentContact = document.getElementById("stdParentContact").value.trim();
+  const classId = document.getElementById("stdClass").value;
+  const fileInput = document.getElementById("stdPhoto");
+
+  if (!name || !admission || !gender || !classId) return alert("Required fields: name, admission, gender, class");
+
+  showLoading("Adding new student...");
+  let photoBlob = null;
+  if (fileInput.files[0]) {
+    photoBlob = fileInput.files[0];
+  }
+
+  const id = Date.now().toString();
+  const data = {
+    id,
+    name,
+    admission,
+    gender,
+    parentContact,
+    classId,
+    teacherId,
+    schoolId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    syncStatus: "pending"
+  };
+  if (photoBlob) data.photo = photoBlob;
+
+  await saveLocal("students", data);
+  syncUp();
+  await renderStudentGrid();
+  fileInput.value = ""; // clear
+  hideLoading();
+}
+
+async function renderStudentGrid() {
+  showLoading("Loading students...");
+  const students = await getAllLocal("students");
+  const grid = document.getElementById("studentGrid");
+  let html = "";
+
+  for (const s of students) {
+    let photoSrc = "";
+    if (s.photo instanceof Blob) {
+      photoSrc = URL.createObjectURL(s.photo);
+    }
+
+    html += `
+      <div class="student-card card">
+        <img class="profile-photo" src="${photoSrc || 'https://via.placeholder.com/80?text=No+Photo'}" alt="${s.name}">
+        <div class="name">${s.name}</div>
+        <div class="class">${s.classId} | Adm: ${s.admission}</div>
+      </div>
+    `;
+  }
+  grid.innerHTML = html || "<p>No students yet</p>";
+  hideLoading();
+}
+
+
+
+
+
+// ──────────────── Attendance ────────────────
+async function renderAttendance() {
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <h3>Attendance</h3>
+    <select id="attClass" onchange="loadStudentsForAttendance()"></select>
+    <input type="date" id="attDate" value="${new Date().toISOString().slice(0,10)}" />
+    <input id="attTerm" type="number" min="1" max="3" placeholder="Term (1-3)" />
+    <input id="attWeek" type="number" min="1" max="14" placeholder="Week" />
+    <div id="attList"></div>
+    <button onclick="bulkMark('present')">All Present</button>
+    <button onclick="bulkMark('absent')">All Absent</button>
+    <button id="saveAttBtn" onclick="saveAttendance()">Save Attendance</button>
+    <input id="filterId" placeholder="Student ID for History" />
+    <input id="filterWeek" type="number" placeholder="Week for History" />
+    <button onclick="viewAttendanceHistory()">View Attendance History</button>
+    <div id="attHistory" style="display:none">
+      <h3>Attendance History</h3>
+      <div id="historyTable"></div>
+      <button onclick="deleteAllAttendance()">Delete All</button>
+      <button onclick="hideHistory()">Hide</button>
+    </div>
+  `;
+  await populateClassSelect("attClass");
+}
+
+let allHistoryRows = [];
+let isLocked = false;
+
+async function loadStudentsForAttendance() {
+  showLoading("Loading students for attendance...");
+  const classId = document.getElementById("attClass").value;
+  const date = document.getElementById("attDate").value;
+  if (!classId || !date) {
+    hideLoading();
+    return;
+  }
+  const students = (await getAllLocal("students")).filter(s => s.classId === classId);
+  const list = document.getElementById("attList");
+  let html = "<div class='card'><div class='card-header'>Mark Attendance</div>";
+  const attId = `${classId}_${date}`;
+  const existing = await getLocal("attendance", attId);
+  isLocked = false;
+  let setHighlight = !existing || (existing && (Date.now() - existing.updatedAt >= 7200000));
+  let recent = existing && (Date.now() - existing.updatedAt < 7200000);
+
+  for (const s of students) {
+    let photoSrc = "";
+    if (s.photo instanceof Blob) {
+      photoSrc = URL.createObjectURL(s.photo);
+    } else {
+      photoSrc = 'https://via.placeholder.com/40?text=No+Photo';
+    }
+    let status = existing ? (existing.records[s.id] || "present") : "present";
+    html += `
+      <div class="student-att" id="row_${s.id}" style="padding:10px; display:flex; align-items:center; gap:10px;">
+        <img class="profile-photo" style="width:40px;height:40px;" src="${photoSrc}" alt="${s.name}">
+        <div style="flex:1">
+          <div>${s.name}</div>
+          <div class="class">ID: ${s.admission}</div>
+        </div>
+        <select id="att_${s.id}" class="status-select" onchange="markStudent('${s.id}')">
+          <option value="present" ${status === "present" ? "selected" : ""}>Present</option>
+          <option value="absent" ${status === "absent" ? "selected" : ""}>Absent</option>
+          <option value="late" ${status === "late" ? "selected" : ""}>Late</option>
+          <option value="sick" ${status === "sick" ? "selected" : ""}>Sick</option>
+          <option value="permission" ${status === "permission" ? "selected" : ""}>Permission</option>
+        </select>
+      </div>
+    `;
+  }
+  html += "</div>";
+  list.innerHTML = html;
+
+  // Set colors
+  document.querySelectorAll(".status-select").forEach(sel => {
+    sel.style.color = getStatusColor(sel.value);
+  });
+
+  if (recent) {
+    isLocked = true;
+    document.querySelectorAll(".status-select").forEach(sel => { sel.disabled = true; });
+    document.getElementById("saveAttBtn").disabled = true;
+    showToast("Attendance view only. Editable after 2 hours.");
+  } else {
+    document.getElementById("saveAttBtn").disabled = false;
+    if (setHighlight) {
+      document.querySelectorAll(".student-att").forEach(row => {
+        row.style.background = "#FFF3CD";
+      });
+    }
+  }
+  hideLoading();
+}
+
+function getStatusColor(status) {
+  const colors = {
+    present: "green",
+    absent: "red",
+    late: "orange",
+    sick: "red",
+    permission: "blue"
+  };
+  return colors[status] || "black";
+}
+
+function markStudent(id) {
+  const row = document.getElementById(`row_${id}`);
+  row.style.background = "";
+  const sel = document.getElementById(`att_${id}`);
+  sel.style.color = getStatusColor(sel.value);
+}
+
+async function saveAttendance() {
+  if (isLocked) return alert("Cannot save, recently updated. Wait 2 hours.");
+  const classId = document.getElementById("attClass").value;
+  const date = document.getElementById("attDate").value;
+  const term = document.getElementById("attTerm").value;
+  const week = document.getElementById("attWeek").value;
+  if (!classId || !date || !term || !week) return alert("Select class, date, term & week");
+
+  // Check if all marked (no highlights)
+  const unmarked = document.querySelectorAll('.student-att[style*="background"]');
+  if (unmarked.length > 0) return alert("All students must be marked/confirmed.");
+
+  showLoading("Saving attendance records...");
+  const records = {};
+  document.querySelectorAll(".status-select").forEach(sel => {
+    const sid = sel.id.replace("att_", "");
+    records[sid] = sel.value;
+  });
+
+  const id = `${classId}_${date}`;
+  const now = Date.now();
+  const data = {
+    id,
+    classId,
+    date,
+    term: parseInt(term),
+    week: parseInt(week),
+    records,
+    teacherId,
+    schoolId,
+    createdAt: now,
+    updatedAt: now,
+    syncStatus: "pending"
+  };
+
+  await saveLocal("attendance", data);
+  syncUp();
+  hideLoading();
+  showToast("Attendance saved successfully");
+}
+
+function bulkMark(status) {
+  if (isLocked) return;
+  document.querySelectorAll(".status-select").forEach(sel => {
+    sel.value = status;
+    sel.style.color = getStatusColor(status);
+    const id = sel.id.replace("att_", "");
+    markStudent(id);
+  });
+}
+
+async function viewAttendanceHistory() {
+  showLoading("Loading attendance history...");
+  const attendances = await getAllLocal("attendance");
+  const students = await getAllLocal("students");
+  const filterSid = document.getElementById("filterId").value.trim();
+  const filterWeek = document.getElementById("filterWeek").value.trim();
+  const classId = document.getElementById("attClass").value;
+  allHistoryRows = [];
+  for (const att of attendances) {
+    if (classId && att.classId !== classId) continue;
+    for (const sid in att.records) {
+      if (filterSid && sid !== filterSid) continue;
+      if (filterWeek && att.week != filterWeek) continue;
+      const student = students.find(s => s.id === sid);
+      if (student) {
+        allHistoryRows.push({
+          attId: att.id,
+          sid,
+          name: student.name,
+          date: att.date,
+          term: att.term,
+          week: att.week,
+          status: att.records[sid],
+          savedAt: new Date(att.updatedAt).toLocaleString(),
+          classId: att.classId
+        });
+      }
+    }
+  }
+  renderHistoryTable(allHistoryRows);
+  document.getElementById("attHistory").style.display = "block";
+  hideLoading();
+}
+
+function renderHistoryTable(rows) {
+  let html = `<table style="width:100%; border-collapse:collapse;">
+    <thead style="background:#f2f2f2;">
+      <tr>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Date</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Term</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Week</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Student ID</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Name</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Status</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Saved At</th>
+        <th style="padding:8px; text-align:left; border-bottom:1px solid #ddd;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  rows.forEach((row, index) => {
+    const bg = index % 2 === 0 ? 'background:#f9f9f9;' : '';
+    html += `<tr style="${bg}">
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.date}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.term}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.week}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.sid}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.name}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.status}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">${row.savedAt}</td>
+      <td style="padding:8px; border-bottom:1px solid #ddd;">
+        <button onclick="editAtt('${row.attId}','${row.sid}')">Edit</button>
+        <button onclick="deleteAtt('${row.attId}','${row.sid}')">Delete</button>
+      </td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById("historyTable").innerHTML = html || "<p>No history</p>";
+}
+
+async function editAtt(attId, sid) {
+  const newStatus = prompt("New status: present, absent, late, sick, permission");
+  if (!["present", "absent", "late", "sick", "permission"].includes(newStatus)) return alert("Invalid status");
+  showLoading("Updating...");
+  const att = await getLocal("attendance", attId);
+  if (att) {
+    att.records[sid] = newStatus;
+    att.updatedAt = Date.now();
+    att.syncStatus = "pending";
+    await saveLocal("attendance", att);
+    syncUp();
+    await viewAttendanceHistory(); // refresh
+  }
+  hideLoading();
+}
+
+async function deleteAtt(attId, sid) {
+  if (!confirm("Delete this entry?")) return;
+  showLoading("Deleting...");
+  const att = await getLocal("attendance", attId);
+  if (att) {
+    delete att.records[sid];
+    att.updatedAt = Date.now();
+    if (Object.keys(att.records).length === 0) {
+      att.syncStatus = "deleted";
+    } else {
+      att.syncStatus = "pending";
+    }
+    await saveLocal("attendance", att);
+    syncUp();
+    await viewAttendanceHistory(); // refresh
+  }
+  hideLoading();
+}
+
+async function deleteAllAttendance() {
+  if (!confirm("Delete all attendance history? This cannot be undone.")) return;
+  showLoading("Deleting all...");
+  const attendances = await getAllLocal("attendance");
+  for (const att of attendances) {
+    att.syncStatus = "deleted";
+    att.updatedAt = Date.now();
+    await saveLocal("attendance", att);
+  }
+  syncUp();
+  await viewAttendanceHistory(); // refresh
+  hideLoading();
+}
+
+function hideHistory() {
+  document.getElementById("attHistory").style.display = "none";
+}
+
+// ──────────────── Fees ────────────────
+async function renderFees() {
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <h3>Fees Tracking</h3>
+    <div id="feeList"></div>
+  `;
+  await renderFeeList();
+}
+
+async function renderFeeList() {
+  showLoading("Loading fees data...");
+  const students = await getAllLocal("students");
+  const fees = await getAllLocal("fees");
+  const container = document.getElementById("feeList");
+
+  let html = "";
+  for (const s of students) {
+    let fee = fees.find(f => f.studentId === s.id);
+    if (!fee) {
+      fee = {
+        id: Date.now().toString(),
+        studentId: s.id,
+        total: 0,
+        paid: 0,
+        balance: 0,
+        teacherId,
+        schoolId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        syncStatus: "pending"
+      };
+      await saveLocal("fees", fee);
+    }
+    const perc = fee.total ? (fee.paid / fee.total) * 100 : 0;
+    let color = perc === 100 ? "var(--success)" : perc > 0 ? "var(--warning)" : "var(--error)";
+
+    html += `
+      <div class="card">
+        <div class="card-header">${s.name} (${s.classId})</div>
+        <div style="padding:12px;">
+          <div>Total: <input type="number" value="${fee.total}" onchange="updateFee('${fee.id}', 'total', this.value)" /></div>
+          <div>Paid: <input type="number" value="${fee.paid}" onchange="updateFee('${fee.id}', 'paid', this.value)" /></div>
+          <div>Balance: ${fee.balance}</div>
+          <div class="fee-progress">
+            <div class="fee-bar" style="width:${perc}%; background:${color};"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = html || "<p>No students</p>";
+  hideLoading();
+}
+
+async function updateFee(feeId, field, value) {
+  showLoading("Updating fee details...");
+  const fee = await getLocal("fees", feeId);
+  fee[field] = parseFloat(value) || 0;
+  fee.balance = fee.total - fee.paid;
+  fee.updatedAt = Date.now();
+  fee.syncStatus = "pending";
+  await saveLocal("fees", fee);
+  syncUp();
+  await renderFeeList();
+  hideLoading();
+}
+
+// No initial setView, as it will be called on auth state change if logged in
+</script>
+
+<!-- PWA Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log("SW registered", reg))
+      .catch(err => console.log("SW registration failed", err));
+  });
+}
+</script>
+
+</body>
+</html>
